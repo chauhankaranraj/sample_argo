@@ -1,0 +1,47 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: volumes-pvc-
+spec:
+  entrypoint: volumes-pvc-example
+
+  volumeClaimTemplates:                   # define pvc
+  - metadata:
+      name: workdir
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 128Mi
+
+  templates:
+  - name: volumes-pvc-example
+    steps:
+      - - name: produce-step
+          template: whalesay
+      - - name: consume-step
+          template: print-message
+  - name: whalesay
+    script:
+      image: python:alpine3.6
+      command: [python]
+      source: |
+        import pickle
+        data = [1, 2, 3]
+        with open('/mnt/vol/data.pkl', 'wb') as f:\
+            pickle.dump(data, f)
+      volumeMounts:                       # mount pv first
+      - name: workdir
+        mountPath: /mnt/vol
+  - name: print-message
+    script:
+      image: python:alpine3.6
+      command: [python]
+      source: |
+        import pickle
+        with open('/mnt/vol/data.pkl', 'rb') as f:\
+            data = pickle.load(f)
+        print(data)
+      volumeMounts:                       # mount pv first
+        - name: workdir
+          mountPath: /mnt/vol

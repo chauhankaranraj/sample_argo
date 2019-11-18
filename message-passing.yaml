@@ -1,0 +1,41 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: volumes-pvc-
+spec:
+  entrypoint: volumes-pvc-example
+
+  volumeClaimTemplates:                   # define pvc
+  - metadata:
+      name: workdir
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 128Mi
+
+  templates:
+  - name: volumes-pvc-example
+    steps:
+      - - name: produce-step
+          template: whalesay
+      - - name: consume-step
+          template: print-message
+  - name: whalesay
+    container:
+      image: docker/whalesay:latest
+      command: [sh, -c]
+      args: ["echo generating message in volume; cowsay hello world this is my secret message | tee /mnt/vol/hello_msg.txt"]
+      volumeMounts:                       # mount pv
+      - name: workdir
+        mountPath: /mnt/vol
+  - name: print-message
+    container:
+      image: alpine:latest
+      command: [sh, -c]
+      args: ["echo reading message from volume; find /mnt/vol; cat /mnt/vol/hello_msg.txt"]
+      volumeMounts:                       # mount pv
+        - name: workdir
+          mountPath: /mnt/vol
+
+# TODO: define as variable
