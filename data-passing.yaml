@@ -1,47 +1,39 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Workflow
 metadata:
-  generateName: volumes-pvc-
+  generateName: data-pass-example-
 spec:
-  entrypoint: volumes-pvc-example
+  entrypoint: ndarray-pass-sharedvol
 
   volumeClaimTemplates:                   # define pvc
   - metadata:
-      name: workdir
+      name: shareddir
     spec:
       accessModes: ["ReadWriteOnce"]
       resources:
         requests:
-          storage: 128Mi
+          storage: 128Ki
+        limits:
+          storage: 128Ki
 
   templates:
-  - name: volumes-pvc-example
+  - name: ndarray-pass-sharedvol
     steps:
       - - name: produce-step
-          template: whalesay
+          template: produce-test-data
       - - name: consume-step
-          template: print-message
-  - name: whalesay
-    script:
-      image: python:alpine3.6
-      command: [python]
-      source: |
-        import pickle
-        data = [1, 2, 3]
-        with open('/mnt/vol/data.pkl', 'wb') as f:\
-            pickle.dump(data, f)
-      volumeMounts:                       # mount pv first
-      - name: workdir
+          template: consume-test-data
+
+  - name: produce-test-data
+    container:
+      image: quay.io/kachau/produce_prom_testdata:dev
+      volumeMounts:                       # mount shared volume
+      - name: shareddir
         mountPath: /mnt/vol
-  - name: print-message
-    script:
-      image: python:alpine3.6
-      command: [python]
-      source: |
-        import pickle
-        with open('/mnt/vol/data.pkl', 'rb') as f:\
-            data = pickle.load(f)
-        print(data)
-      volumeMounts:                       # mount pv first
-        - name: workdir
+
+  - name: consume-test-data
+    container:
+      image: quay.io/kachau/consume_prom_testdata:dev
+      volumeMounts:                       # mount shared volume
+        - name: shareddir
           mountPath: /mnt/vol
