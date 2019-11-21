@@ -28,9 +28,11 @@ logging.basicConfig(format='%(asctime)s:%(levelname)s: %(message)s', level=loggi
 
 def update_saved_prom_metrics(metrics, save_dir):
     # connect to prometheus
+    prom_url = os.getenv("FLT_PROM_URL", "https://telemeter-lts.datahub.redhat.com/")
+    prom_access_token = os.getenv("FLT_PROM_ACCESS_TOKEN")
     pc = PrometheusConnect(
-        url="https://telemeter-lts.datahub.redhat.com/",
-        headers={"Authorization": "bearer InsertTokenHere"},
+        url=prom_url,
+        headers={"Authorization": f"bearer {prom_access_token}"},
         disable_ssl=True,
     )
 
