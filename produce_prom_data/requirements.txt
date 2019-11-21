@@ -1,0 +1,5 @@
+numpy
+scipy
+pandas
+prometheus-api-client
+apscheduler

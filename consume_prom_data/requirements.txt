@@ -1,0 +1,7 @@
+pyarrow
+boto3
+numpy
+scipy
+pandas
+scikit-learn
+umap-learn
